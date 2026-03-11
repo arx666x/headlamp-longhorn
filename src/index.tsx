@@ -61,8 +61,8 @@ const LonghornEngineImage = makeCustomResourceClass({
 
 // Define Detail View Wrapper Components
 function VolumeDetailsView() {
-  const { namespace, name } = useParams<{ namespace: string; name: string }>();
-  const [item, error] = LonghornVolume.useGet(name, namespace);
+  const { name } = useParams<{ name: string }>();
+  const [item, error] = LonghornVolume.useGet(name, 'longhorn-system');
 
   if (error) {
     // @ts-ignore Error type is not well defined
@@ -92,7 +92,7 @@ function VolumeDetailsView() {
                 routeName="node"
                 params={{
                   name: status.currentNodeID,
-                  namespace: namespace,
+                  namespace: 'longhorn-system',
                 }}
               >
                 {status.currentNodeID}
@@ -271,8 +271,8 @@ function NodeDiskTable({ specDisks, statusDisks }: { specDisks: any; statusDisks
 }
 
 function NodeDetailsView() {
-  const { namespace, name } = useParams<{ namespace: string; name: string }>();
-  const [item, error] = LonghornNode.useGet(name, namespace);
+  const { name } = useParams<{ name: string }>();
+  const [item, error] = LonghornNode.useGet(name, 'longhorn-system');
 
   if (error) {
     // @ts-ignore Error type is not well defined
@@ -350,8 +350,8 @@ function NodeDetailsView() {
 }
 
 function BackupDetailsView() {
-  const { namespace, name } = useParams<{ namespace: string; name: string }>();
-  const [item, error] = LonghornBackup.useGet(name, namespace);
+  const { name } = useParams<{ name: string }>();
+  const [item, error] = LonghornBackup.useGet(name, 'longhorn-system');
 
   if (error) {
     // @ts-ignore Error type is not well defined
@@ -429,8 +429,8 @@ function BackupDetailsView() {
 }
 
 function EngineImageDetailsView() {
-  const { namespace, name } = useParams<{ namespace: string; name: string }>();
-  const [item, error] = LonghornEngineImage.useGet(name, namespace);
+  const { name } = useParams<{ name: string }>();
+  const [item, error] = LonghornEngineImage.useGet(name, 'longhorn-system');
 
   if (error) {
     // @ts-ignore Error type is not well defined
@@ -563,48 +563,48 @@ registerRoute({
   sidebar: LONGHORN_VOLUMES_LIST_ROUTE,
   name: LONGHORN_VOLUMES_LIST_ROUTE,
   exact: true,
-  component: () => (
-    <ResourceListView
-      title="Longhorn Volumes"
-      resourceClass={LonghornVolume}
-      columns={[
-        // Rely on default name column rendering
-        'name',
-        // Other columns... (state, robustness, size, node, namespace, age)
-        {
-          id: 'state',
-          label: 'State',
-          getter: (volume: KubeObjectInterface) => volume.jsonData?.status?.state || '-',
-          sort: true,
-        },
-        {
-          id: 'robustness',
-          label: 'Robustness',
-          getter: (volume: KubeObjectInterface) => volume.jsonData?.status?.robustness || '-',
-          sort: true,
-        },
-        {
-          id: 'size',
-          label: 'Size',
-          getter: (volume: KubeObjectInterface) => volume.jsonData?.spec?.size || '-',
-          sort: true,
-        },
-        {
-          id: 'node',
-          label: 'Node',
-          getter: (volume: KubeObjectInterface) => volume.jsonData?.status?.currentNodeID || '-',
-          sort: true,
-        },
-        'namespace',
-        'age',
-      ]}
-    />
-  ),
+  component: () => {
+    const [volumes] = LonghornVolume.useList({ namespace: 'longhorn-system' });
+    return (
+      <ResourceListView
+        title="Longhorn Volumes"
+        data={volumes}
+        columns={[
+          'name',
+          {
+            id: 'state',
+            label: 'State',
+            getter: (volume: KubeObjectInterface) => volume.jsonData?.status?.state || '-',
+            sort: true,
+          },
+          {
+            id: 'robustness',
+            label: 'Robustness',
+            getter: (volume: KubeObjectInterface) => volume.jsonData?.status?.robustness || '-',
+            sort: true,
+          },
+          {
+            id: 'size',
+            label: 'Size',
+            getter: (volume: KubeObjectInterface) => volume.jsonData?.spec?.size || '-',
+            sort: true,
+          },
+          {
+            id: 'node',
+            label: 'Node',
+            getter: (volume: KubeObjectInterface) => volume.jsonData?.status?.currentNodeID || '-',
+            sort: true,
+          },
+          'age',
+        ]}
+      />
+    );
+  },
 });
 
 // Volume Detail View
 registerRoute({
-  path: '/longhorn/volumes/:namespace/:name',
+  path: '/longhorn/volumes/:name',
   sidebar: LONGHORN_VOLUMES_LIST_ROUTE,
   parent: LONGHORN_ROOT_SIDEBAR,
   name: LONGHORN_VOLUME_DETAILS_ROUTE,
@@ -618,45 +618,45 @@ registerRoute({
   sidebar: LONGHORN_NODES_LIST_ROUTE,
   name: LONGHORN_NODES_LIST_ROUTE,
   exact: true,
-  component: () => (
-    <ResourceListView
-      title="Longhorn Nodes"
-      resourceClass={LonghornNode}
-      columns={[
-        // Use default name column rendering
-        'name',
-        // Other columns...
-        {
-          id: 'ready',
-          label: 'Ready',
-          getter: (node: KubeObjectInterface) =>
-            node.jsonData?.status?.conditions?.find((c: any) => c.type === 'Ready')?.status || '-', // Access via jsonData
-          sort: true,
-        },
-        {
-          id: 'allowScheduling',
-          label: 'Allow Scheduling',
-          getter: (node: KubeObjectInterface) =>
-            (node.jsonData?.spec?.allowScheduling ?? '-').toString(), // Access via jsonData
-          sort: true,
-        },
-        {
-          id: 'schedulable',
-          label: 'Schedulable',
-          getter: (node: KubeObjectInterface) =>
-            node.jsonData?.status?.conditions?.find((c: any) => c.type === 'Schedulable')?.status ||
-            '-', // Access via jsonData
-          sort: true,
-        },
-        'age',
-      ]}
-    />
-  ),
+  component: () => {
+    const [nodes] = LonghornNode.useList({ namespace: 'longhorn-system' });
+    return (
+      <ResourceListView
+        title="Longhorn Nodes"
+        data={nodes}
+        columns={[
+          'name',
+          {
+            id: 'ready',
+            label: 'Ready',
+            getter: (node: KubeObjectInterface) =>
+              node.jsonData?.status?.conditions?.find((c: any) => c.type === 'Ready')?.status || '-',
+            sort: true,
+          },
+          {
+            id: 'allowScheduling',
+            label: 'Allow Scheduling',
+            getter: (node: KubeObjectInterface) =>
+              (node.jsonData?.spec?.allowScheduling ?? '-').toString(),
+            sort: true,
+          },
+          {
+            id: 'schedulable',
+            label: 'Schedulable',
+            getter: (node: KubeObjectInterface) =>
+              node.jsonData?.status?.conditions?.find((c: any) => c.type === 'Schedulable')?.status || '-',
+            sort: true,
+          },
+          'age',
+        ]}
+      />
+    );
+  },
 });
 
 // Node Detail View
 registerRoute({
-  path: '/longhorn/nodes/:namespace/:name',
+  path: '/longhorn/nodes/:name',
   sidebar: LONGHORN_NODES_LIST_ROUTE,
   parent: LONGHORN_ROOT_SIDEBAR,
   name: LONGHORN_NODE_DETAILS_ROUTE,
@@ -945,48 +945,48 @@ registerRoute({
   sidebar: LONGHORN_BACKUPS_LIST_ROUTE,
   name: LONGHORN_BACKUPS_LIST_ROUTE,
   exact: true,
-  component: () => (
-    <ResourceListView
-      title="Longhorn Backups"
-      resourceClass={LonghornBackup}
-      columns={[
-        // Use default name column rendering
-        'name',
-        // Other columns...
-        {
-          id: 'snapshotName',
-          label: 'Snapshot Name',
-          getter: (backup: KubeObjectInterface) => backup.jsonData?.status?.snapshotName || '-', // Access via jsonData
-          sort: true,
-        },
-        {
-          id: 'snapshotSize',
-          label: 'Snapshot Size',
-          getter: (backup: KubeObjectInterface) => backup.jsonData?.status?.size || '-', // Access via jsonData
-          sort: true,
-        },
-        {
-          id: 'backupTarget',
-          label: 'Backup Target',
-          getter: (backup: KubeObjectInterface) => backup.jsonData?.status?.backupTargetName || '-', // Access via jsonData
-          sort: true,
-        },
-        {
-          id: 'state',
-          label: 'State',
-          getter: (backup: KubeObjectInterface) => backup.jsonData?.status?.state || '-', // Access via jsonData
-          sort: true,
-        },
-        'namespace',
-        'age',
-      ]}
-    />
-  ),
+  component: () => {
+    const [backups] = LonghornBackup.useList({ namespace: 'longhorn-system' });
+    return (
+      <ResourceListView
+        title="Longhorn Backups"
+        data={backups}
+        columns={[
+          'name',
+          {
+            id: 'snapshotName',
+            label: 'Snapshot Name',
+            getter: (backup: KubeObjectInterface) => backup.jsonData?.status?.snapshotName || '-',
+            sort: true,
+          },
+          {
+            id: 'snapshotSize',
+            label: 'Snapshot Size',
+            getter: (backup: KubeObjectInterface) => backup.jsonData?.status?.size || '-',
+            sort: true,
+          },
+          {
+            id: 'backupTarget',
+            label: 'Backup Target',
+            getter: (backup: KubeObjectInterface) => backup.jsonData?.status?.backupTargetName || '-',
+            sort: true,
+          },
+          {
+            id: 'state',
+            label: 'State',
+            getter: (backup: KubeObjectInterface) => backup.jsonData?.status?.state || '-',
+            sort: true,
+          },
+          'age',
+        ]}
+      />
+    );
+  },
 });
 
 // Backup Detail View
 registerRoute({
-  path: '/longhorn/backups/:namespace/:name',
+  path: '/longhorn/backups/:name',
   sidebar: LONGHORN_BACKUPS_LIST_ROUTE,
   parent: LONGHORN_ROOT_SIDEBAR,
   name: LONGHORN_BACKUP_DETAILS_ROUTE,
@@ -1000,47 +1000,48 @@ registerRoute({
   sidebar: LONGHORN_ENGINE_IMAGES_LIST_ROUTE,
   name: LONGHORN_ENGINE_IMAGES_LIST_ROUTE,
   exact: true,
-  component: () => (
-    <ResourceListView
-      title="Longhorn Engine Images"
-      resourceClass={LonghornEngineImage}
-      columns={[
-        // Use default name column rendering
-        'name',
-        // Other columns...
-        {
-          id: 'state',
-          label: 'State',
-          getter: (img: KubeObjectInterface) => img.jsonData?.status?.state || '-', // Access via jsonData
-          sort: true,
-        },
-        {
-          id: 'image',
-          label: 'Image',
-          getter: (img: KubeObjectInterface) => img.jsonData?.spec?.image || '-', // Access via jsonData
-          sort: true,
-        },
-        {
-          id: 'refCount',
-          label: 'Ref Count',
-          getter: (img: KubeObjectInterface) => img.jsonData?.status?.refCount ?? '-', // Access via jsonData
-          sort: true,
-        },
-        {
-          id: 'buildDate',
-          label: 'Build Date',
-          getter: (img: KubeObjectInterface) => img.jsonData?.status?.buildDate || '-', // Access via jsonData
-          sort: true,
-        },
-        'age',
-      ]}
-    />
-  ),
+  component: () => {
+    const [engineImages] = LonghornEngineImage.useList({ namespace: 'longhorn-system' });
+    return (
+      <ResourceListView
+        title="Longhorn Engine Images"
+        data={engineImages}
+        columns={[
+          'name',
+          {
+            id: 'state',
+            label: 'State',
+            getter: (img: KubeObjectInterface) => img.jsonData?.status?.state || '-',
+            sort: true,
+          },
+          {
+            id: 'image',
+            label: 'Image',
+            getter: (img: KubeObjectInterface) => img.jsonData?.spec?.image || '-',
+            sort: true,
+          },
+          {
+            id: 'refCount',
+            label: 'Ref Count',
+            getter: (img: KubeObjectInterface) => img.jsonData?.status?.refCount ?? '-',
+            sort: true,
+          },
+          {
+            id: 'buildDate',
+            label: 'Build Date',
+            getter: (img: KubeObjectInterface) => img.jsonData?.status?.buildDate || '-',
+            sort: true,
+          },
+          'age',
+        ]}
+      />
+    );
+  },
 });
 
 // Engine Image Detail View
 registerRoute({
-  path: '/longhorn/engineimages/:namespace/:name',
+  path: '/longhorn/engineimages/:name',
   sidebar: LONGHORN_ENGINE_IMAGES_LIST_ROUTE,
   parent: LONGHORN_ROOT_SIDEBAR,
   name: LONGHORN_ENGINE_IMAGE_DETAILS_ROUTE,
