@@ -17,7 +17,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Create the final image containing only the built plugin artifacts
-FROM alpine:latest
+FROM alpine:3.21
 
 # Create the directory structure expected by Headlamp (/plugins/<plugin-folder-name>)
 # Using 'headlamp-longhorn' as the folder name based on repo/directory structure
